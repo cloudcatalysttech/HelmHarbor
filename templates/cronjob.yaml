@@ -1,0 +1,60 @@
+{{- if .Values.cronjob.enabled -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "helmharbor.fullname" . }}
+  labels:
+    {{- include "helmharbor.labels" . | nindent 4 }}
+    {{- include "helmharbor.customLabels" . | nindent 4 }}
+spec:
+  concurrencyPolicy: {{ default "Forbid" .Values.cronjob.concurrencyPolicy }}
+  failedJobsHistoryLimit: {{ default 1 .Values.cronjob.failedJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ default 1 .Values.cronjob.successfulJobsHistoryLimit }}
+  schedule: {{ .Values.cronjob.schedule | quote }}
+  timeZone: {{ default "UTC" .Values.cronjob.timeZone | quote }}
+  suspend: {{ .Values.cronjob.suspend | default false }}
+  startingDeadlineSeconds: {{ .Values.cronjob.startingDeadlineSeconds | default 60 }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "helmharbor.selectorLabels" . | nindent 12 }}
+          annotations:
+            {{- with .Values.cronjob.jobTemplate.annotations }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+        spec:
+          restartPolicy: {{ default "Never" .Values.cronjob.jobTemplate.spec.restartPolicy }}
+          serviceAccountName: {{ include "helmharbor.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: {{ include "helmharbor.fullname" . }}
+              image: "{{ .Values.cronjob.jobTemplate.spec.image.repository }}:{{ .Values.cronjob.jobTemplate.spec.image.tag }}"
+              envFrom:
+                {{- range .Values.cronjob.configMapRef }}
+                - configMapRef:
+                    name: {{ . }}
+                {{- end }}
+                {{- range .Values.cronjob.secretsMapRef }}
+                - secretRef:
+                    name: {{ . }}
+                {{- end }} 
+              env:
+                {{- with .Values.cronjob.environment }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
+          nodeSelector:
+            {{- with .Values.nodeSelector }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          affinity:
+            {{- with .Values.affinity }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          tolerations:
+            {{- with .Values.tolerations }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+{{- end }}

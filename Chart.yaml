@@ -1,9 +1,9 @@
 apiVersion: v2
 name: helmharbor
 type: application
-version: 1.0.0
+version: 1.0.1
 description: HelmHarbor is a comprehensive Helm chart for deploying a centralized Helm chart management solution within Kubernetes. It streamlines the process of managing, deploying, and controlling access to Helm charts across different environments. This chart includes features such as automated updates for deployments, persistent volume claim (PVC) management, DaemonSet and StatefulSet configurations for distributed storage and computing, ingress for external access, and support for Kubernetes' green/blue deployments.
-appVersion: "1.0.0"
+appVersion: "1.0.1"
 keywords:
   - helm
   - charts

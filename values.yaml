@@ -1,23 +1,104 @@
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
 configmap:
-  enabled: false
-  # configs:
-  #   - name: "mapNameOne"
-  #     values:
-  #       foo: "bar"
-  #       moo: "cow"
-  #   - name: "mapNameTwo"
-  #     values:
-  #       foo: "bar"
-  #       moo: "cow"
+  enabled: true
+  configs:
+    - name: "mapNameOne"
+      values:
+        foo: "bar"
+        moo: "cow"
+
 
 secret:
-  enabled: false
-  # configs:
-  #   - name: "secretNameOne"
-  #     values:
-  #       foo: "bar"
-  #       moo: "cow"
-  #   - name: "secretNameTwo"
-  #     values:
-  #       foo: "bar"
-  #       moo: "cow"
+  enabled: true
+  configs:
+    - name: "secretNameOne"
+      values:
+        foo: "bar"
+        moo: "cow"
+
+
+# Enable or disable the CronJob
+cronjob:
+  # Enable or disable the CronJob
+  enabled: true
+
+  # Cron schedule for the job, in standard cron format
+  schedule: "0 1 * * *"
+
+  # Policy regarding concurrent executions of the job
+  concurrencyPolicy: "Forbid"  # Options: Allow, Forbid, Replace
+
+  # History limits for failed and successful jobs
+  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: 1
+
+  # Optional: Set a specific time zone for the schedule
+  timeZone: "UTC"
+
+  # Optional: Suspend all subsequent executions of this cronjob
+  suspend: false
+
+  # Optional: Set deadline in seconds for starting the job
+  startingDeadlineSeconds: 60
+
+  # Job template settings
+  jobTemplate:
+    # Maximum duration for the job to run
+    activeDeadlineSeconds: 120
+
+    # Number of retries before considering a job as failed
+    backoffLimit: 6
+
+    # Number of times the job should be successfully completed
+    completions: 1
+
+    # Maximum number of pods that can run simultaneously
+    parallelism: 1
+
+    # Time to live seconds after the job is finished
+    ttlSecondsAfterFinished: 100
+
+    # Image settings for the container in the job
+    spec:
+      image:
+        repository: "example/image"  # Docker image repository
+        tag: "latest"                # Docker image tag
+
+      # Restart policy for all containers within the pod
+      restartPolicy: "Never"
+
+  # Environment variables for the CronJob container
+  environment: {}
+
+  configMapRef:
+  - mapNameOne
+  secretsMapRef:
+  - secretNameOne
+
+  # Environment variables from a ConfigMap or Secret
+  environmentValueFrom: {}
+
+  # Environment variables from a ConfigMap
+  environmentValueFromResource: {}
+
+  # Custom labels for the CronJob pods
+  podLabels: {}
+
+  # Custom annotations for the CronJob pods
+  podAnnotations: {}
+
+  # Node selector for specifying a node for the job to run on
+  nodeSelector: {}
+
+  # Affinity settings for assigning the job to a specific group of nodes
+  affinity: {}
+
+  # Tolerations for allowing the job to run on tainted nodes
+  tolerations: {}

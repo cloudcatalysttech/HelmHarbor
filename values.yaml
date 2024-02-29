@@ -1,0 +1,23 @@
+configmap:
+  enabled: false
+  # configs:
+  #   - name: "mapNameOne"
+  #     values:
+  #       foo: "bar"
+  #       moo: "cow"
+  #   - name: "mapNameTwo"
+  #     values:
+  #       foo: "bar"
+  #       moo: "cow"
+
+secret:
+  enabled: false
+  # configs:
+  #   - name: "secretNameOne"
+  #     values:
+  #       foo: "bar"
+  #       moo: "cow"
+  #   - name: "secretNameTwo"
+  #     values:
+  #       foo: "bar"
+  #       moo: "cow"

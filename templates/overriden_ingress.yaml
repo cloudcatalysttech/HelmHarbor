@@ -1,0 +1,21 @@
+{{- if .Values.ingress_override.enabled }}
+{{- $fullName := include "HelmHarbor.fullname" . -}}
+{{- range $key, $lb := .Values.ingress_override.loadbalancers }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-{{ $key }}
+  labels:
+    {{- include "HelmHarbor.labels" $ | nindent 4 }}
+    {{- include "HelmHarbor.customLabels" $ | indent 4 }}
+  {{- with $lb.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with $lb.spec }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+---
+{{- end }}
+{{- end }}

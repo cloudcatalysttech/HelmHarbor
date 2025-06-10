@@ -1,0 +1,119 @@
+{{- if not .Values.ingress_override.enabled }}
+{{- $fullName := include "HelmHarbor.fullname" . -}}
+{{- range $key, $lb := .Values.loadbalancers }}
+{{- $lbPortName := include "portName" $lb }}
+{{- $lbPortNumber := include "portNumber" $lb }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-{{ $key }}
+  {{- with $lb.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "HelmHarbor.labels" $ | nindent 4 }}
+    {{- include "HelmHarbor.customLabels" $ | indent 4 }}
+spec:
+  rules:
+    {{- $commonPaths := .paths }}
+    {{- range .hosts }}
+    -
+      {{- if .host }}
+      host: {{ quote .host }}
+      {{- end }}
+      http:
+        paths:
+        {{- if $commonPaths }}
+          {{- range $commonPaths }}
+          - path: {{ .path }}
+            {{- if .pathType }}
+            pathType: {{ .pathType }}
+            {{- else }}
+            pathType: ImplementationSpecific
+            {{- end }}
+            backend:
+              service:
+                name: {{ default $fullName .annotation }}
+                port:
+                  {{- if .port }}
+                  {{- if include "portName" . }}
+                  name: {{ include "portName" . }}
+                  {{- else }}
+                  number: {{ include "portNumber" . }}
+                  {{- end }}
+                  {{- else }}
+                  {{- if $lbPortName }}
+                  name: {{ $lbPortName }}
+                  {{- else }}
+                  number: {{ $lbPortNumber }}
+                  {{- end }}
+                  {{- end }}
+          {{- end }}
+        {{- else if .paths }}
+          {{- range .paths }}
+          - path: {{ .path }}
+            {{- if .pathType }}
+            pathType: {{ .pathType }}
+            {{- else }}
+            pathType: ImplementationSpecific
+            {{- end }}
+            backend:
+              service:
+                name: {{ default $fullName .annotation }}
+                port:
+                  {{- if .port }}
+                  {{- if include "portName" . }}
+                  name: {{ include "portName" . }}
+                  {{- else }}
+                  number: {{ include "portNumber" . }}
+                  {{- end }}
+                  {{- else }}
+                  {{- if $lbPortName }}
+                  name: {{ $lbPortName }}
+                  {{- else }}
+                  number: {{ $lbPortNumber }}
+                  {{- end }}
+                  {{- end }}
+          {{- end }}
+        {{- else if .path }}
+          - path: {{ .path }}
+            {{- if .pathType }}
+            pathType: {{ .pathType }}
+            {{- else }}
+            pathType: ImplementationSpecific
+            {{- end }}
+            backend:
+              service:
+                name: {{ default $fullName .annotation }}
+                port:
+                  {{- if .port }}
+                  {{- if include "portName" . }}
+                  name: {{ include "portName" . }}
+                  {{- else }}
+                  number: {{ include "portNumber" . }}
+                  {{- end }}
+                  {{- else }}
+                  {{- if $lbPortName }}
+                  name: {{ $lbPortName }}
+                  {{- else }}
+                  number: {{ $lbPortNumber }}
+                  {{- end }}
+                  {{- end }}
+        {{- else }}
+          - path: /*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ default $fullName .annotation }}
+                port:
+                  {{- if $lbPortName }}
+                  name: {{ $lbPortName }}
+                  {{- else }}
+                  number: {{ $lbPortNumber }}
+                  {{- end }}
+        {{- end }}
+    {{- end }}
+---
+{{- end }}
+{{- end }}

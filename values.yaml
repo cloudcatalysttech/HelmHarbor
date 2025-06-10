@@ -1,0 +1,369 @@
+replicaCount: 1  # only effective if autoscaling is not enabled
+revisionHistoryLimit: 10
+
+autoscaling:
+  enabled: true
+  cpu:
+    enabled: true
+    percentage: 60
+  memory:
+    enabled: false
+    percentage: 60
+  min_replicas: 1
+  max_replicas: 2
+  #behavior:
+  #  scaleDown:
+  #    policies:
+  #    - type: Pods
+  #      value: 4
+  #      periodSeconds: 60
+  #    - type: Percent
+  #      value: 10
+  #      periodSeconds: 60
+
+rollingUpdate: {}
+#  enabled: true
+#  maxUnavailable: 25%
+#  maxSurge: 1
+
+#  minReadySeconds: 0
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+instanceOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podSecurityContext:
+  {}
+  # fsGroup: 2000
+
+#podAnnotations:
+
+# Add custom lables to all pods
+# podLabels:
+#   app.kubernetes.io/environment: "ephemeral"
+#   app.kubernetes.io/owner: "team-backend"
+
+securityContext:
+  {}
+  # capabilities
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+#    - 8080
+#    - 9080
+#    - 12345
+#    - 2552
+
+# This controls if the volumes definitions will be in free-form and will be included as it's.
+# It will allow users to define different volume types without relying on specific templates.
+volumesFreeForm: false
+#  volumes:
+#    - name: efs-volume
+#      nfs:
+#        server: efs.us-east-1.amazonaws.com
+#        path: /
+
+# Reference: https://kubernetes.io/docs/tasks/run-application/configure-pdb/.
+podDisruptionBudget:
+  maxUnavailable: "10%"
+
+loadbalancers:
+#  ingest:
+#    hosts:
+#      - host: service-ingest.cloudcatalyst.app
+#      - host: service-ingest1.cloudcatalyst.app
+#    port:
+#      number: 8080
+#    annotations:
+#      kubernetes.io/ingress.class: alb
+#      alb.ingress.kubernetes.io/scheme: internet-facing
+#      alb.ingress.kubernetes.io/success-codes: 200,404
+#      alb.ingress.kubernetes.io/certificate-arn: <cert arn>  # obtained from AWS Certificate Manager (ACM)
+#      alb.ingress.kubernetes.io/security-groups: <sg name>   # optional
+#
+#  ### SSL/TLS Redirection
+#  # This example demonstrates how to redirect traffic from HTTP to HTTPS
+#  # Once defined on a single Ingress, it impacts every Ingress within IngressGroup. 
+#  # Once enabled SSLRedirect, every HTTP listener will be configured with a default action 
+#  # which redirects to HTTPS, other rules will be ignored.
+#  # The SSL port that redirects to must exists on LoadBalancer. 
+#  # See https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.5/guide/ingress/annotations/#listen-ports
+#  # for the listen ports configuration.
+#  # Reference https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.5/guide/ingress/annotations/#ssl-redirect
+#
+#  ingest:
+#    hosts:
+#      - host: service-ingest.cloudcatalyst.app
+#      - host: service-ingest1.cloudcatalyst.app
+#    port:
+#      number: 8080
+#    annotations:
+#      kubernetes.io/ingress.class: alb
+#      alb.ingress.kubernetes.io/scheme: internet-facing
+#      alb.ingress.kubernetes.io/success-codes: 200,404
+#      alb.ingress.kubernetes.io/ssl-redirect: '443' # Redirect HTTP to HTTPS
+#      alb.ingress.kubernetes.io/certificate-arn: <cert arn>  # obtained from AWS Certificate Manager (ACM)
+#      alb.ingress.kubernetes.io/security-groups: <sg name>   # optional
+#
+# #  ### PATH BASED ROUTING ###
+#  # This example demonstrates how to use a simple fanout design to send
+#  # certain paths for a single host to different service ports. Here,
+#  # the /admin path is sent to port 8080 while the /public path is
+#  # configured to use port 8090.
+#  # 
+#  # You must specify a pathType as well which can be one of:
+#  #   - Prefix: Matches based on a URL path prefix split by /.
+#  #   - Exact: Matches the URL path exactly and with case sensitivity.
+#  #   - ImplementationSpecific (default): Matching is left to the IngressClass.
+#  # Reference: https://kubernetes.io/docs/reference/using-api/deprecation-guide/#ingress-v122
+#
+#  ingest:
+#    hosts:
+#      - host: my-service.cloudcatalyst.app
+#        paths:
+#          - path: /admin/*
+#            pathType: ImplementationSpecific
+#            port: 8080
+#          - path: /public/*
+#            pathType: ImplementationSpecific
+#            port: 8090
+#    # default port to use for hosts without paths specified
+#    port:
+#      number: 8080
+#    annotations:
+#      kubernetes.io/ingress.class: alb
+#      alb.ingress.kubernetes.io/scheme: internet-facing
+#      alb.ingress.kubernetes.io/success-codes: 200,404
+#      alb.ingress.kubernetes.io/certificate-arn: <cert arn>
+#      alb.ingress.kubernetes.io/security-groups: <sg name>
+#
+#  ### COMMON PATH BASED ROUTING ###
+#
+#  # If you have multiple hosts AND multiple paths, it can be beneficial to specify the paths just once
+#  # and then all hosts will use the same set of paths.
+#  #
+#  # This is particularly useful if you are dynamically adding hosts at deploy time.
+#  #
+#  public:
+#    hosts:
+#    - host: cluster-host.cloudcatalyst.app
+#    - host: internal-host.cloudcatalyst.app
+#    - host: external-host.cloudcatalyst.app
+#    paths:
+#    - path: /auth/*
+#      pathType: ImplementationSpecific
+#      port: 3001
+#    - path: /api/*
+#      pathType: ImplementationSpecific
+#      port: 3001
+#    - path: "/*"
+#
+#  ### ANNOTATION BASED ROUTING ###
+#  # This example demonstrates how to use annotations to describe AWS LB rules.
+#  # Here, the "/path" is redirected to "/admin/"
+#  # while the "/admin", "/flagent", "/management" paths are overridden
+#  # to the same path with a trailing slash in the end.
+#  # You also can use annotations based routing with other kinds of routing.
+#  #!!! NOTE !!!
+#  # If you set host or path variable directly in the hosts' section,
+#  # you won't need to add the same value into hostHeaderConfig or pathPatternConfig!
+#  # Elsewise aws-load-balancer-controller will cause the error!
+#  # On the other hand if you set additional value to host or path variable,
+#  # aws-load-balancer-controller will append it to the corresponding section.
+#
+#  # As of 1.0.26, you must specify a pathType as well which can be one of:
+#  #   - Prefix: Matches based on a URL path prefix split by /.
+#  #   - Exact: Matches the URL path exactly and with case sensitivity.
+#  #   - ImplementationSpecific (default): Matching is left to the IngressClass.
+#  # Reference: https://kubernetes.io/docs/reference/using-api/deprecation-guide/#ingress-v122
+#
+#  ingest:
+#    hosts:
+#      - port:
+#          name: use-annotation
+#        annotation: rule-path2
+#        path: /
+#        pathType: Prefix
+#      - port:
+#          name: use-annotation
+#        annotation: rule-path1
+#        path: /
+#        pathType: Prefix
+#      - host: admin-ui.cloudcatalyst.app
+#        port:
+#          number: 80
+#        path: /admin/*
+#        pathType: ImplementationSpecific
+#      - host: admin-ui.cloudcatalyst.app
+#        port:
+#          number: 81
+#        path: /flagent/*
+#        pathType: ImplementationSpecific
+#    annotations:
+#      alb.ingress.kubernetes.io/actions.rule-path1: >
+#        {"type":"redirect","redirectConfig":{"Protocol": "#{protocol}","Port": "#{port}","Host": "#{host}","Path": "/#{path}/","Query": "","StatusCode": "HTTP_301"}}
+#      alb.ingress.kubernetes.io/conditions.rule-path1: >
+#        [{"field":"host-header","hostHeaderConfig":{"values":["admin-ui.cloudcatalyst.app"]}},{"field":"path-pattern","pathPatternConfig":{"values":["/admin","/flagent","/management"]}}]
+#      alb.ingress.kubernetes.io/actions.rule-path2: >
+#        {"type":"redirect","redirectConfig":{"Protocol": "#{protocol}","Port": "#{port}","Host": "#{host}","Path": "/admin/","Query": "","StatusCode": "HTTP_301"}}
+#      alb.ingress.kubernetes.io/conditions.rule-path2: >
+#        [{"field":"host-header","hostHeaderConfig":{"values":["admin-ui.cloudcatalyst.app"]}}]
+#
+#
+# Time in seconds before terminating a pod.
+# Default value: 30 seconds.
+# https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#podspec-v1-core
+terminationGracePeriodSeconds: 30
+
+# This is enabled by default. If you require a daemonset, you will need to set deployment.enabled: false
+deployment:
+  enabled: true
+  alwaysRestartPodsOnDeployment: true
+
+ingress_override:
+  enabled: false
+
+# If you enable daemonset you should set deployment.enabled: false
+daemonset:
+  enabled: false
+
+configmap:
+  enabled: false
+  # configs:
+  #   - name: "mapNameOne"
+  #     values:
+  #       foo: "bar"
+  #       moo: "cow"
+  #   - name: "mapNameTwo"
+  #     values:
+  #       foo: "bar"
+  #       moo: "cow"
+
+secret:
+  enabled: false
+  # configs:
+  #   - name: "secretNameOne"
+  #     values:
+  #       foo: "bar"
+  #       moo: "cow"
+  #   - name: "secretNameTwo"
+  #     values:
+  #       foo: "bar"
+  #       moo: "cow"
+
+initContainers: {}
+#  init-myservice:
+#    image:
+#      name: myservice-init
+#      tag: 1.0.0
+#    command:
+#      - "sh"
+#      - "-c"
+#      - "until nslookup myservice.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for myservice; sleep 2; done"
+
+containers: {}
+#  myservice:
+#    image:
+#      name: myservice
+#      tag: v1.0.1
+#      pullPolicy: IfNotPresent
+#    args:
+#      - start
+#    environment:
+#      APP_LOG_LEVEL: "DEBUG"
+#    environmentValueFromResource:
+#      - resourceType: configMapRef
+#        resourceName: "mapNameOne"
+#      - resourceType: secretRef
+#        resourceName: "mapNameOne"
+#    environmentValueFrom:
+#      HOSTNAME_FQDN:
+#        fieldRef: status.hostIP
+#      akka_remote_hostname:
+#        fieldRef: status.hostIP
+#      GOMAXPROCS:
+#        resourceFieldRef: limits.cpu
+#      AWESOME_LIMIT:
+#        resourceFieldRef: limits.cpu
+#        containerName: awesome
+#        divisor: 1m
+#    secretValueFrom:
+#      MY_SECRET:
+#        name: environment_name
+#        key: MY_SECRET
+#    ports:
+#      # Application ports
+#      - 8080
+#      - 9080
+#    readinessProbe:
+#      exec:
+#        command:
+#          - curl
+#          - -s
+#          - -f
+#          - --show-error
+#          - http://localhost:8080/healthcheck
+#    lifecycle:
+#      preStop:
+#        exec:
+#          command: ["/bin/sh","-c","sleep 5"]
+#    resources:
+#      limits:
+#        cpu: 100m
+#        memory: 128Mi
+#      requests:
+#        cpu: 100m
+#        memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# customLabels -- Labels to add to each object of the chart.
+customLabels: {}
+#  app.kubernetes.io/environment: "ephemeral"
+#  app.kubernetes.io/owner: "team-backend"
+
+#
+# StatefulSet settings
+#
+
+statefulSet:
+  # Enables a StatefulSet in place of a Deployment of Daemonset
+  # Cannot be used with Deployment or Daemonset enabled. If enabling this, set deployment.enabled = false
+  enabled: false
+  # defines scaling behavior for the StatefulSet. Options are:
+  # - OrderedReady: the default. pods scale up and down in order.
+  # - Parallel: pods are launched and terminated in parallel
+  # https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy
+  # WARNING: this cannot be changed on an existing StatefulSet - you must first remove it and then re-deploy
+  podManagementPolicy: OrderedReady
+  # used when computing the governing service domain so that each pod has a stable network ID
+  # https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id
+  serviceName: changeme
+  # defines stable storage using PersistentVolumes provisioned by a PersistentVolume Provisioner (EBS, EFS)
+  # https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#volume-claim-templates
+  volumeClaimTemplates: []
+  # persistentVolumeClaimRetentionPolicy is available in 1.27, behind a feature gate. Noting this here for future
+  # reference. It is not currently implemented in this chart
+  # https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#persistentvolumeclaim-retention

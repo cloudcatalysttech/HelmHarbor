@@ -1,0 +1,179 @@
+{{- if and (.Values.deployment.enabled) (.Values.daemonset.enabled) }}
+{{- fail "Cannot enable a deployment and daemonset using HelmHarbor" }}
+{{- end }}
+
+{{- if .Values.deployment.enabled -}}
+{{ $imageTag := .Values.imageTag }}
+{{ $imageDigest := .Values.imageDigest }}
+{{ $volumes := .Values.volumes }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "HelmHarbor.fullname" . }}
+  labels:
+    {{- include "HelmHarbor.labels" . | nindent 4 }}
+    {{- include "HelmHarbor.customLabels" . | indent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  {{- end }}
+  {{- if .Values.rollingUpdate.enabled }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.rollingUpdate.maxSurge }}
+  {{- end }}
+  minReadySeconds: {{ default 0 .Values.minReadySeconds }}
+  selector:
+    matchLabels:
+      {{- include "HelmHarbor.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "HelmHarbor.selectorLabels" . | nindent 8 }}
+        {{- if .Values.deployment.alwaysRestartPodsOnDeployment }}
+        cloudcatalyst/HelmHarbor: {{ now | unixEpoch | quote }}
+        {{- end }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      serviceAccountName: {{ include "HelmHarbor.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        {{- range $name, $initContainer := .Values.initContainers }}
+        - name: {{ $name }}
+          {{- if $initContainer.image.tag }}
+          image: "{{ $initContainer.image.name }}:{{ $initContainer.image.tag }}"
+          {{- else if $initContainer.image.digest }}
+          image: "{{ $initContainer.image.name }}@{{ $initContainer.image.digest }}"
+          {{- end }}
+          command:
+            {{- toYaml $initContainer.command | nindent 12 }}
+          args:
+            {{- toYaml $initContainer.args | nindent 12 }}
+        {{- end }}
+      containers:
+        {{- range $name, $container := .Values.containers }}
+        - name: {{ $name }}
+          command:
+            {{- toYaml $container.command | nindent 12 }}
+          args:
+            {{- toYaml $container.args | nindent 12 }}
+          securityContext:
+            {{- toYaml $container.securityContext | nindent 12 }}
+          {{- if $container.image.tag }}
+          image: "{{ $container.image.name }}:{{ $container.image.tag }}"
+          {{- else if $container.image.digest }}
+          image: "{{ $container.image.name }}@{{ $container.image.digest }}"
+          {{- else if $imageTag }}
+          image: "{{ $container.image.name }}:{{ $imageTag }}"
+          {{- else if $imageDigest }}
+          image: "{{ $container.image.name }}@{{ $imageDigest }}"
+          {{- else }}
+          image: "{{ $container.image.name }}"
+          {{- end }}
+          imagePullPolicy: {{ $container.image.pullPolicy }}
+          ports:
+            {{- range $container.ports }}
+            - containerPort: {{ . }}
+              protocol: TCP
+            {{- end }}
+          {{- if $container.lifecycle }}
+          lifecycle:
+            {{- toYaml $container.lifecycle | nindent 12 }}
+          {{- end }}
+          {{- if $container.environmentValueFromResource }}
+          envFrom:
+            {{- range $key, $value := $container.environmentValueFromResource }}
+            {{- if eq $value.resourceType "configMapRef" }}
+            - configMapRef:
+                name: {{ include "HelmHarbor.fullname" $ }}-{{ $value.resourceName }}
+            {{- else if eq $value.resourceType "secretRef" }}
+            - secretRef:
+                name: {{ include "HelmHarbor.fullname" $ }}-{{ $value.resourceName }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          env:
+            {{- range $key, $value := $container.environmentValueFrom }}
+            - name: {{ $key }}
+              {{- if $value.fieldRef }}
+              valueFrom:
+                fieldRef:
+                  fieldPath: {{ $value.fieldRef }}
+              {{- end }}
+              {{- if $value.resourceFieldRef }}
+              valueFrom:
+                resourceFieldRef:
+                  resource: {{ $value.resourceFieldRef }}
+                  {{- if $value.containerName }}
+                  containerName: {{ $value.containerName }}
+                  {{- end }}
+                  {{- if $value.divisor }}
+                  divisor: {{ $value.divisor }}
+                  {{- end }}
+              {{- end }}
+            {{- end }}
+            {{- range $key, $value := $container.environment }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- range $key, $value := $container.secretValueFrom }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $value.name }}
+                  key: {{ $value.key }}
+            {{- end }}
+
+          livenessProbe:
+            {{- toYaml $container.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml $container.readinessProbe | nindent 12 }}
+          startupProbe:
+            {{- toYaml $container.startupProbe | nindent 12 }}
+          resources:
+            {{- toYaml $container.resources | nindent 12 }}
+          volumeMounts:
+            {{- range $name, $dst := $container.volumes }}
+            - mountPath: {{ $dst }}
+              name: {{ $name }}
+            {{- end }}
+          {{- end }}
+      volumes:
+        {{- if .Values.volumesFreeForm }}
+        {{- toYaml $volumes | nindent 8 }}
+        {{- else }}
+        {{- range $name, $path := $volumes }}
+        - name: {{ $name }}
+          hostPath:
+            path: {{ $path }}
+            type: Directory
+        {{- end }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+{{- end -}}

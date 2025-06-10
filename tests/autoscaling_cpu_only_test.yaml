@@ -1,0 +1,26 @@
+suite: test HelmHarbor hpa cpu only
+templates:
+  - hpa.yaml
+tests:
+  - it: hpa should render
+    set:
+      autoscaling:
+        enabled: true
+        cpu:
+          enabled: true
+        keda:
+          enabled: false  
+    asserts:
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - hasDocuments:
+          count: 1
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: cpu
+              target:
+                type: Utilization
+                averageUtilization: 60

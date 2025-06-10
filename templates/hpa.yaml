@@ -1,0 +1,45 @@
+{{ if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "HelmHarbor.fullname" . }}
+  labels:
+    {{- include "HelmHarbor.labels" $ | nindent 4 }}
+    {{- include "HelmHarbor.customLabels" $ | indent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "HelmHarbor.fullname" . }}
+  minReplicas: {{ .Values.autoscaling.min_replicas }}
+  maxReplicas: {{ .Values.autoscaling.max_replicas }}
+  metrics:
+{{- if and (.Values.autoscaling.cpu.enabled) (not .Values.autoscaling.cpu_percentage) }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.cpu.percentage }}
+  # Ensure backwards compatibility for future maintaners. After changing HPA to support using both CPU and Memory.
+  {{- else if  .Values.autoscaling.cpu_percentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.cpu_percentage }}
+  {{- end -}}
+  {{- if .Values.autoscaling.memory.enabled }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.memory.percentage }}
+  {{- end }}
+  {{- if .Values.autoscaling.behavior }}
+  behavior:
+    {{- toYaml .Values.autoscaling.behavior | nindent 4 }}
+  {{- end }}
+{{ end }}

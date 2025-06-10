@@ -1,0 +1,16 @@
+{{- if .Values.configmap.enabled -}}
+{{- range $i, $config := .Values.configmap.configs }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "HelmHarbor.fullname" $ }}-{{ $config.name }}
+  labels:
+    {{- include "HelmHarbor.labels" $ | nindent 4 }}
+    {{- include "HelmHarbor.customLabels" $ | indent 4 }}
+data:
+  {{- range $key, $val := $config.values }}
+  {{ $key }}: {{$val | quote}}
+  {{- end }}
+{{- end -}}
+{{- end -}}

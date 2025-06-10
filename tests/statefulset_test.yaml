@@ -1,0 +1,161 @@
+suite: test HelmHarbor statefulset
+templates:
+  - statefulset.yaml
+tests:
+  - it: StatefulSet should fail if deployment enabled
+    set:
+      deployment:
+        enabled: true
+      statefulSet:
+        enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: Cannot enable a StatefulSet with deployment enabled
+
+  - it: StatefulSet should fail if daemonset enabled
+    set:
+      # enabled by default, so disable to ensure we're testing daemonsets
+      deployment:
+        enabled: false
+      daemonset:
+        enabled: true
+      statefulSet:
+        enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: Cannot enable a StatefulSet with daemonset enabled
+
+  - it: StatefulSet should render using standard options
+    set:
+      deployment:
+        enabled: false
+      statefulSet:
+        enabled: true
+        serviceName: nginx
+        volumeClaimTemplates:
+        - metadata:
+            name: www
+          spec:
+            accessModes: [ "ReadWriteOnce" ]
+            storageClassName: "my-storage-class"
+            resources:
+              requests:
+                storage: 1Gi
+
+      replicaCount: 1
+      autoscaling:
+        enabled: false
+
+      serviceAccount:
+        create: true
+        name: "nginx"
+
+      rollingUpdate:
+        enabled: true
+        maxUnavailable: 2%
+        maxSurge: 10%
+
+      podDisruptionBudget:
+        enabled: false
+
+      containers:
+        nginx:
+          image:
+            name: nginx
+            pullPolicy: Always
+          environment:
+            FOO: 1
+            BAR: "2"
+          ports:
+            - 8080
+          args:
+            - start
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1024Mi
+            limits:
+              cpu: 1000m
+              memory: 2048Mi
+          volumes:
+            www: /usr/share/nginx/html
+
+
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec
+          value:
+            minReadySeconds: 0
+            replicas: 1
+            selector:
+              matchLabels:
+                app.kubernetes.io/instance: RELEASE-NAME
+                app.kubernetes.io/name: HelmHarbor
+            serviceName: nginx
+            podManagementPolicy: OrderedReady
+            strategy:
+              rollingUpdate:
+                maxSurge: 10%
+                maxUnavailable: 2%
+              type: RollingUpdate
+            template:
+              metadata:
+                labels:
+                  app.kubernetes.io/instance: RELEASE-NAME
+                  app.kubernetes.io/name: HelmHarbor
+              spec:
+                containers:
+                  - args:
+                      - start
+                    command: null
+                    env:
+                      - name: BAR
+                        value: "2"
+                      - name: FOO
+                        value: "1"
+                    image: nginx
+                    imagePullPolicy: Always
+                    livenessProbe: null
+                    name: nginx
+                    ports:
+                      - containerPort: 8080
+                        protocol: TCP
+                    readinessProbe:
+                      httpGet:
+                        path: /healthcheck
+                        port: 8080
+                    resources:
+                      limits:
+                        cpu: 1000m
+                        memory: 2048Mi
+                      requests:
+                        cpu: 500m
+                        memory: 1024Mi
+                    securityContext: null
+                    startupProbe: null
+                    volumeMounts:
+                      - mountPath: /usr/share/nginx/html
+                        name: www
+                initContainers: null
+                securityContext: {}
+                serviceAccountName: nginx
+                terminationGracePeriodSeconds: 30
+            volumeClaimTemplates:
+              - metadata:
+                  name: www
+                spec:
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 1Gi
+                  storageClassName: my-storage-class

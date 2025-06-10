@@ -11,9 +11,9 @@ publish: package
 	echo "$$GHCR_TOKEN" | helm registry login ghcr.io \
 		--username haydercyber \
 		--password-stdin && \
-	helm push "`ls HelmHarbor-*.tgz`" $(ghcrRepoUrl)
+	helm push "`ls helmharbor-*.tgz`" $(ghcrRepoUrl)
 
 # Clean the packaged chart
 .PHONY: clean
 clean:
-	rm -f HelmHarbor-*.tgz
+	rm -f helmharbor-*.tgz
